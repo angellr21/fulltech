@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution-net
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./redis_data:/data
+    networks:
+      - evolution-net
+
+  evolution:
+    # Si el usuario ya tiene una imagen local puede cambiar esta línea por:
+    # image: evolution-api:local
+    image: ghcr.io/stack-app-br/evolution-api:latest
+    container_name: evolution
+    restart: unless-stopped
+
+    # Carga de variables desde el .env que estará junto a este compose
+    env_file:
+      - .env
+
+    # Exportamos explícitamente los datos de DB también como variables sueltas,
+    # para evitar cualquier incompatibilidad con scripts/migraciones.
+    environment:
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_HOST: evolution-postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+
+    depends_on:
+      - evolution-postgres
+      - evolution-redis
+
+    # La aplicación escucha dentro del contenedor en el puerto 8080.
+    # Publicamos 3001 en el host (lo que NPM usará como backend).
+    ports:
+      - "3001:8080"
+
+    networks:
+      - evolution-net
+      - proxy-net
+
+networks:
+  evolution-net:
+    driver: bridge
+  proxy-net:
+    external: true

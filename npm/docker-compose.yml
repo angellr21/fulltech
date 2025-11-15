@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  app:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm-app-1
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP público
+      - "81:81"      # Panel NPM (normalmente se filtra con firewall / túnel SSH)
+      - "443:443"    # HTTPS público
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy-net
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: npm-n8n-1
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=n8n.fulltechvzla.com
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.fulltechvzla.com/
+      - N8N_EDITOR_BASE_URL=https://n8n.fulltechvzla.com/
+      - NODE_ENV=production
+      - TZ=America/Caracas
+    # Sin puertos expuestos directamente al host.
+    # El acceso se hará SIEMPRE a través de Nginx Proxy Manager por la red proxy-net.
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true

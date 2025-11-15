@@ -15,3 +15,6 @@ evolution/redis_data/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+chatwoot/postgres_data/
+chatwoot/redis_data/

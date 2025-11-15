@@ -1,0 +1,17 @@
+# Docker data (no subir datos persistentes)
+npm/data/
+npm/letsencrypt/
+npm/n8n_data/
+
+evolution/postgres_data/
+evolution/redis_data/
+
+# Archivos de entorno reales (las copias .env no se versionan)
+*.env
+*.env.local
+.env.*
+!.env.example
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
